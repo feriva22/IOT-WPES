@@ -17,104 +17,21 @@
     <main role="main">
         <section class="jumbotron text-center">
             <div class="container">
-              <h1 class="jumbotron-heading">Data Sensor Deteksi Ahay</h1>
-              <p>
-                <button id="refresh-data" class="btn btn-primary my-2">Refresh Data</a>
-              </p>
+              <h1 class="jumbotron-heading">WPES (Water Purification Electrocoagulation System)</h1>
+			  <p>WPES adalah alat yang digunakan untuk memonitoring dan menjernihkan air secara otomatis</p>
             </div>
         </section>
         <div class="container">
             <div class="row" id="all-device">
-                            
+                <p>Klik Link Berikut untuk Mendapatkan Aplikasi WPES</p>       
+				<a href="https://wpes-app.herokuapp.com/" class="btn btn-lg btn-primary">Klik Disini</a>
             </div>
         </div>
     </main>
     <!-- SCRIPT JS LOAD-->
     <script src="assets/jquery-3.4.1.min.js"></script>
     <script>
-        var device_data = null;
-
-        $(document).ready(function(){
-            get_alldevice();
-
-            $('#refresh-data').on('click',function(e){
-                $('#all-device').empty();
-                get_alldevice();
-            })
-
-            setInterval(function(){ 
-                update_sensor();
-            }, 3000);
-
-
-        });
-
-        function update_sensor(){
-            $(document).ready(function(){
-                $.ajax({
-                   url: 'http://localhost:8080/get.php',
-                   method: 'get',
-                   dataType: 'json',
-                   success: function(resp){
-                        data = resp.data;
-                        if(data.length > 0 && data.length == device_data.length){
-                            $.each(data,(idx,val) => {
-                                $(`.sensor1[data-id="${val.id}"]`).html(`Sensor 1 : ${val.sensor1}`);
-                                $(`.sensor2[data-id="${val.id}"]`).html(`Sensor 2 : ${val.sensor2}`);
-                            })
-                        }else{
-                            get_alldevice();
-                        }
-                   },
-                   error: function(jxHr){
-
-                   }
-               }) 
-            })
-        }
-
-        function get_alldevice(){
-            $(document).ready(function(){
-               $.ajax({
-                   url: 'http://localhost:8080/get.php',
-                   method: 'get',
-                   dataType: 'json',
-                   success: function(resp){
-                        
-                        data = resp.data;
-                        device_data = data;
-                        if(data.length > 0){
-                            $.each(data,(idx,val) => {
-                                $('#all-device').append(`
-                                <div class="col-md-6">
-                                    <div class="card mb-4 box-shadow">
-                                      <div class="card-body">
-                                        <p class="card-text">ID : ${val.id}</p>
-                                        <div class="sensor1" data-id="${val.id}">Sensor 1 : ${val.sensor1}</div>
-                                        <div class="sensor2" data-id="${val.id}">Sensor 2 : ${val.sensor2}</div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                          <small class="text-muted">Last update : ${val.last_update}</small>
-                                        </div>
-                                      </div>
-                                    </div>
-                                </div>
-                                `);
-                            })
-                        }else{
-                            $('#all-device').append(`
-                                <p>No device Found</p>
-                            `);
-                        }
-                   },
-                   error: function(jxHr){
-
-                   }
-               }) 
-            })
-        }
-
-        
-    
+       
     </script>
 </body>
 </html>
