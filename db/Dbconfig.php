@@ -10,7 +10,7 @@ class Dbconfig {
         $this->serverName = 'localhost';
         $this->userName = 'root';
         $this->passCode = '';
-        $this->dbName = 'wpes';
+        $this->dbName = 'WPES';
         $this->port = 3306;
     }
 }
