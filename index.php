@@ -22,7 +22,7 @@
             </div>
         </section>
         <div class="container">
-            <div class="row" id="all-device">
+            <div class="row text-center" id="all-device">
                 <p>Klik Link Berikut untuk Mendapatkan Aplikasi WPES</p>       
 				<a href="https://wpes-app.herokuapp.com/" class="btn btn-lg btn-primary">Klik Disini</a>
             </div>
