@@ -1,15 +1,16 @@
+
 //USE ESP8266 SOFTWARE VERSION 2.5.2 , NO ERROR
 
-
 //LOAD LIBRARY
+#include <EEPROM.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP8266WebServer.h>
 
-
-int sensorValue;
 #define relayPin 15 //
 #define echoPin D7 // Echo Pin
 #define trigPin D6 // Trigger Pin
+int sensorLightValue;
 long duration, distance; // Duration used to calculate distance
 
 #define LED_MERAH 4
@@ -19,21 +20,59 @@ long duration, distance; // Duration used to calculate distance
 #define DEVICE_ID 16
 
 //SSID of your network
-char ssid[] = "Veteran 2"; //SSID of your Wi-Fi router
-char pass[] = "februari"; //Password of your Wi-Fi router
+const char *ssidAP = "WPES-Config"; //ap name used for config esp
+const char *passAP = "12345678"; //used as ap password for config esp
+/* Soft AP network parameters */
+IPAddress apIP(192, 168, 4, 1);
+IPAddress netMsk(255, 255, 255, 0);
+
+/* Don't set this wifi credentials. They are configurated at runtime and stored on EEPROM */
+char ssid[32] = "";
+char password[32] = "";
+char accessKey[32] = "";
+char deviceId[32] = "";
 String server_ip =  "192.168.1.82:8080";
 String server_path =  "";
+
 #define SERVER_OK 200
 #define SERVER_MAINTENANCE 400
 
 bool is_check_distance = true;
-bool is_connect_server = false;
+bool is_connect_to_server = false;
+
+bool must_connect_wifi;
+
+/** Last time I tried to connect to WLAN */
+long lastConnectTry = 0;
 int counter = 0;
+
+ESP8266WebServer server(80);
+
+/** Current WLAN status */
+int status = WL_IDLE_STATUS;
 
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600); // starts the serial port at 9600
+
+// Connect to Wi-Fi network
+
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(ssidAP,passAP);
+  //Start webserver
+  server.on("/",handleRoot );
+  server.on("/inputCode",handleInputCode);
+  server.on("/wifi", handleWifi);
+  server.on("/wifisave", handleWifiSave);
+  server.on("/regisDevice/",handleForm);
+  server.onNotFound(handleNotFound);
+  server.begin();
+  loadCredentials(); // Load WLAN credentials from network
+  must_connect_wifi = strlen(ssid) > 0;//Request WLAN connect if there is a SSID
+
+
+    //SET PIN CONFIGURATION
   pinMode(relayPin,OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -42,38 +81,61 @@ void setup() {
   pinMode(LED_KUNING, OUTPUT);
   pinMode(LED_HIJAU, OUTPUT);
 
-// Connect to Wi-Fi network
-  send_action_device("DEVICE_ON");
+}
 
-  Serial.println();
-  Serial.println();
-  Serial.print("Connecting to...");
-  Serial.println(ssid);
-
-  WiFi.begin(ssid, pass);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    merah_kedip();
-    delay(200);
-  }
-  Serial.println("");
-  Serial.println("Wi-Fi connected successfully");
-  Serial.println("");
-  Serial.print("Connected, IP address: ");
-  Serial.println(WiFi.localIP());
-  send_action_device("CONNECTED_NETWORK");
-
+void connectWifi() {
+  Serial.println("Connecting as wifi client...");
+  WiFi.disconnect();
+  WiFi.begin ( ssid, password );
+  int connRes = WiFi.waitForConnectResult();
+  Serial.print ( "connRes: " );
+  Serial.println ( connRes );
+  Serial.println("");  
 }
 
 void loop() {
+  if(must_connect_wifi){
+    Serial.println("Connect Requested");
+    WiFi.disconnect();
+    must_connect_wifi = false;
+    connectWifi();
+    lastConnectTry = millis();
+  } else {
+    int s = WiFi.status();
+    if (s == 0 && millis() > (lastConnectTry + 60000) ) {
+      /* If WLAN disconnected and idle try to connect */
+      /* Don't set retry time too low as retry interfere the softAP operation */
+      must_connect_wifi = true;
+    }
+    if (status != s) { // WLAN status change
+      Serial.print ( "Status: " );
+      Serial.println ( s );
+      status = s;
+      if (s == WL_CONNECTED) {
+        Serial.print ( "Connected to " );
+        Serial.println ( ssid );
+        Serial.print ( "IP address: " );
+        Serial.println ( WiFi.localIP() );
+              hijau_terus();
+
+        if(accessKey ==  "NULL" || deviceId  == "NULL"){
+          send_action_device("DEVICE_ON");
+          send_action_device("CONNECTED_NETWORK");
+        }
+        
+      } else if(s == WL_NO_SSID_AVAIL) {
+        merah_terus();
+        WiFi.disconnect();
+      }
+    }
+  }
+
+  //HTTP CONNECTION
+  server.handleClient();
+
 
   //CHECK KONDISI JARINGAN TERLEBIH DAHULU
-  if((WiFi.status() == WL_CONNECTED)){
-    if(is_connect_server){
-      hijau_terus();
-    }else {
-      merah_terus();
-    }
+  if((status == WL_CONNECTED)){
     //ACT SEND VALUE SENSOR TO SERVER
     //.....
       if(counter == 5000) {
@@ -95,11 +157,15 @@ void loop() {
     digitalWrite(relayPin,HIGH);
 
     //SEND STATUS KE SERVER
-    send_action_device("WATER_FILLING_ON");
+    if(accessKey ==  "NULL" || deviceId  == "NULL"){
+      send_action_device("WATER_FILLING_ON");
+    }
   } else { 
     //OFF POMPA AIR
     digitalWrite(relayPin,LOW);
-    send_action_device("WATER_FILLING_OFF");
+    if(accessKey ==  "NULL" || deviceId  == "NULL"){
+      send_action_device("WATER_FILLING_OFF");
+    }
     //SEND STATUS KE SERVER
     
     //CHECK KONDISI KEJERNIHAN AIR
@@ -110,7 +176,9 @@ void loop() {
       kuning_terus();
 
       //SEND STATUS KE SERVER
-      send_action_device("FILTERING_ON");
+      if(accessKey ==  "NULL" || deviceId  == "NULL"){
+       send_action_device("FILTERING_ON");
+       }
     } else {
       //LANJUTKAN CHECK JARAK
       is_check_distance = true;
@@ -119,21 +187,22 @@ void loop() {
 
 
       //SEND STATUS KE SERVER
-      send_action_device("FILTERING_OFF");
+       if(accessKey ==  "NULL" || deviceId  == "NULL"){
+          send_action_device("FILTERING_OFF");
+       }
     }
   }
   
-  counter += 500;
+  counter += 1000;
   delay(500);
-
   
 }
 
 
 
 bool check_avoidance(){
-  sensorValue = analogRead(A0); // read analog input pin 0
-  if(sensorValue < 80) {
+  sensorLightValue = analogRead(A0); // read analog input pin 0
+  if(sensorLightValue < 80) {
     //digitalWrite(relayPin,HIGH);
     return false;
   }else {
@@ -145,68 +214,98 @@ bool check_avoidance(){
 
 long check_distance(){
   digitalWrite(trigPin, LOW);
-delayMicroseconds(2);
-digitalWrite(trigPin, HIGH);
-delayMicroseconds(10);
-digitalWrite(trigPin, LOW);
-duration = pulseIn(echoPin, HIGH);
-//Calculate the distance (in cm) based on the speed of sound.
-distance = duration/58.2;
-//Serial.println(distance);
-delay(50);
-return distance;
-//Delay 50ms before next reading.
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  //Calculate the distance (in cm) based on the speed of sound.
+  distance = duration/58.2;
+  //Serial.println(distance);
+  delay(50);
+  return distance;
+  //Delay 50ms before next reading.
 }
 
 
 void send_sensor_value(){
+    if(accessKey == "NULL" || deviceId == "NULL"){
+      return;
+    }
     HTTPClient http;
 
     http.begin("http://"+server_ip+"/"+server_path+"post_sensor.php"); //HTTP
     //http.addHeader("Content-Type", "application/json");
     http.addHeader("Content-Type", "text/plain");
 
-  
-    String param = "{ \"water_level\" : " + String(distance,DEC) + ", \"turbidity\" : "+ String(sensorValue,DEC)+" , \"device_id\" : "+ DEVICE_ID +"}";
+
+    String param = "{ \"water_level\" : " + String(distance,DEC) + ", \"turbidity\" : "+ String(sensorLightValue,DEC)+" , \"device_id\" : "+ deviceId +"}";
+    Serial.println(param);
     int httpCode = http.POST(param);
 
     if(httpCode > 0){
        // file found at server
         if (httpCode == HTTP_CODE_OK) {
-          is_connect_server = true;
-            String payload = http.getString(); 
+          is_connect_to_server = true;
         }
         else {
-            Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+            //Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
         }
     }else{
-      is_connect_server = false;
-      Serial.printf("HTTP POST FAILED , error: %s\n",http.errorToString(httpCode).c_str());
+      is_connect_to_server = false;
+      //Serial.printf("HTTP POST FAILED , error: %s\n",http.errorToString(httpCode).c_str());
     }
     http.end();
 }
 
 void send_action_device(String action){
+    if(accessKey == "NULL" || deviceId == "NULL"){
+      return;
+    }
     HTTPClient http;
     http.begin("http://"+server_ip+"/"+server_path+"post_action.php"); //HTTP
     //http.addHeader("Content-Type", "application/json");
     http.addHeader("Content-Type", "text/plain");
 
-    String param = "{ \"type\" : \"" + action +  "\", \"device_id\" : "+ String(DEVICE_ID) + " }";
+    String param = "{ \"type\" : \"" + action +  "\", \"device_id\" : "+ String(deviceId) + " }";
     int httpCode = http.POST(param);
     if(httpCode > 0){
        // file found at server
         if (httpCode == HTTP_CODE_OK) {
-          is_connect_server = true;
-            String payload = http.getString(); 
-            Serial.println(payload);
+          is_connect_to_server = true;
         }
         else {
-            Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+            //Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
         }
     }else{
-      is_connect_server = false;
-      Serial.printf("HTTP POST FAILED , error: %s\n",http.errorToString(httpCode).c_str());
+      is_connect_to_server = false;
+      //Serial.printf("HTTP POST FAILED , error: %s\n",http.errorToString(httpCode).c_str());
+    }
+    http.end();
+}
+
+String authenticate(String code){
+   HTTPClient http;
+    http.begin("http://"+server_ip+"/"+server_path+"authenticate.php"); //HTTP
+    //http.addHeader("Content-Type", "application/json");
+    http.addHeader("Content-Type", "text/plain");
+
+    String param = "{ \"code\" : \"" + code +  "\" }";
+    Serial.println(param);
+    int httpCode = http.POST(param);
+    if(httpCode > 0){
+       // file found at server
+        if (httpCode == HTTP_CODE_OK) {
+          is_connect_to_server = true;
+          String payload = http.getString();
+          Serial.println(payload);
+        }
+        else {
+            //Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        }
+    }else{
+      is_connect_to_server = false;
+      //Serial.printf("HTTP POST FAILED , error: %s\n",http.errorToString(httpCode).c_str());
     }
     http.end();
 }
