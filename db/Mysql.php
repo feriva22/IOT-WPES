@@ -67,7 +67,7 @@ function get($tableName,$single = FALSE,$where = NULL)   {
         ));
     }
 
-    $sql = "SELECT * FROM  ".$this->databaseName.".".$tableName." ". ($where !== NULL ? "WHERE $output" : "");
+	$sql = "SELECT * FROM  ".$this->databaseName.".".$tableName." ". ($where !== NULL ? "WHERE $output" : "");
     $data = array();
     $result = $this->connection->query($sql);
     if($result->num_rows > 0){

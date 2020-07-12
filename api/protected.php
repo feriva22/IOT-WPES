@@ -24,7 +24,17 @@ $arr = explode(" ", $authHeader);
 $jwt = $arr[1];
 if($jwt){
     try {
-        $decoded = JWT::decode($jwt, $secret_key, array('HS256'));
+		$decoded = JWT::decode($jwt, $secret_key, array('HS256'));
+		$data_query = $MysqlService->get('users',TRUE,[
+			'email' => "'{$decoded->data->email}'"
+		]);
+		if($data_query == NULL){
+			http_response_code(400);
+    		echo json_encode(array(
+    		    "message" => "Invalid Token."
+			));
+			exit();
+		}
     }catch (Exception $e){
     http_response_code(401);
 
