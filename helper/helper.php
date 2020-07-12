@@ -11,7 +11,8 @@
     function json_response($status, $message = null, $data = null, $expand_value = null, $resp_code = 200)
     {
         header('Content-Type: application/json');
-        
+		http_response_code($resp_code);
+		
         if($status === 'error'){
             if(empty($message) || $message == "")
                 $message = 'Invalid input';

@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('Asia/Jakarta');
+
 class Dbconfig {
     protected $serverName;
     protected $userName;
@@ -10,7 +12,7 @@ class Dbconfig {
         $this->serverName = 'localhost';
         $this->userName = 'root';
         $this->passCode = '';
-        $this->dbName = 'WPES';
+        $this->dbName = 'wpes';
         $this->port = 3306;
     }
 }

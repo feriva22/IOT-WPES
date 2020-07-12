@@ -4,7 +4,7 @@ include 'Dbconfig.php';
 
 class Mysql extends Dbconfig{
 
-public $connection;
+private $connection;
 
 
 public $databaseName;
@@ -26,13 +26,11 @@ function Mysql()    {
 }
 
 function dbConnect(){
+	$this->connection = null;
+
     $this->connection = mysqli_connect($this->hostName,$this->userName,$this->passCode,
                                             $this->databaseName,$this->port);
     return $this->connection;
-}
-
-function isConnected(){
-    return !$this->connection->connect_errno;
 }
 
 function dbDisconnect() {
@@ -70,7 +68,6 @@ function get($tableName,$single = FALSE,$where = NULL)   {
     }
 
     $sql = "SELECT * FROM  ".$this->databaseName.".".$tableName." ". ($where !== NULL ? "WHERE $output" : "");
-
     $data = array();
     $result = $this->connection->query($sql);
     if($result->num_rows > 0){
@@ -90,7 +87,6 @@ function insert($tableName,$insData) {
     $escaped_values = array_values($insData);
     $values  = implode(", ", $escaped_values);
     $sql = "INSERT INTO $tableName ($columns) VALUES ($values)";
-
     $this->connection->query($sql);
     return $this->connection->insert_id;
 }
@@ -103,7 +99,7 @@ function update_multiple_column($updData, $tableName, $pk_id, $pk_value){
     ));
 
 
-    $sql = "UPDATE $tableName SET $output WHERE $pk_id = $pk_value";
+	$sql = "UPDATE $tableName SET $output WHERE $pk_id = $pk_value";
     return $this->connection->query($sql);
 }
 
