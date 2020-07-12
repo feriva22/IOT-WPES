@@ -13,7 +13,7 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 $secret_key = "AIZAKMIANJRITLAHKAOO";
 $issuer_claim = "wemos.mooo.com";
-$audience_claim = "YOUR_BITCH";
+$audience_claim = "HESOYAM";
 
 $jwt = null;
 $MysqlService = new Mysql();

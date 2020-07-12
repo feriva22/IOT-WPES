@@ -38,7 +38,7 @@ if($data_query !== NULL){
 
 	$secret_key = 'AIZAKMIANJRITLAHKAOO';
 	$issuer_claim = "wemos.mooo.com";
-	$audience_claim = "YOUR_BITCH";
+	$audience_claim = "HESOYAM";
 	$issuedate_claim = time();
 	$notbefore_claim = $issuedate_claim + 10; //not before in seconds
 	$expire_claim = $issuedate_claim + 3600; //expire time in seconds
