@@ -1,12 +1,10 @@
 <?php
 include_once '../db/Mysql.php';
 require "../vendor/autoload.php";
+require "../helper/helper.php";
 use \Firebase\JWT\JWT;
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Max-Age: 3600");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+cors();
 
 
 $secret_key = "AIZAKMIANJRITLAHKAOO";
@@ -29,15 +27,23 @@ if($jwt){
 			'email' => "'{$decoded->data->email}'"
 		]);
 		if($data_query == NULL){
-			http_response_code(400);
+			http_response_code(401);
     		echo json_encode(array(
     		    "message" => "Invalid Token."
 			));
 			exit();
 		}
-    }catch (Exception $e){
+	} catch(\Firebase\JWT\ExpiredException $e){
+		http_response_code(401);
+		echo json_encode(array(
+			"message" => "Access denied.",
+			"error" => $e->getMessage(),
+			"expired" => true
+		));
+		exit();
+	}
+	catch (Exception $e){
     http_response_code(401);
-
     echo json_encode(array(
         "message" => "Access denied.",
         "error" => $e->getMessage()
@@ -47,7 +53,7 @@ if($jwt){
 } else {
 	http_response_code(400);
     echo json_encode(array(
-        "message" => "Invalid Token."
+        "message" => "Token Not Found."
 	));
 	exit();
 }

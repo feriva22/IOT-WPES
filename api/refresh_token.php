@@ -1,15 +1,11 @@
 <?php
 include_once '../db/Mysql.php';
 require "../vendor/autoload.php";
+require '../helper/helper.php';
 use \Firebase\JWT\JWT;
 
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Max-Age: 3600");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-
+cors();
 
 $secret_key = "AIZAKMIANJRITLAHKAOO";
 $issuer_claim = "wemos.mooo.com";
@@ -43,8 +39,8 @@ if(isset($refresh_token) && $refresh_token !== ""){
 
 		//if refresh token not expired
 		$issuedate_claim = time();
-		$notbefore_claim = $issuedate_claim + 10; //not before in seconds
-		$expire_claim = $issuedate_claim + 3600; //expire time in seconds
+		$notbefore_claim = $issuedate_claim; //not before in seconds
+		$expire_claim = $issuedate_claim + 15; //expire time in seconds
 		$token = array(
 			"iss" => $issuer_claim,
 			"aud" => $audience_claim,
@@ -58,7 +54,7 @@ if(isset($refresh_token) && $refresh_token !== ""){
 			)
 		);
 
-		http_response_code(200);
+		http_response_code(201);
 
 		$jwt = JWT::encode($token,$secret_key);
 		$refresh_token = uniqid("",TRUE);
@@ -70,9 +66,10 @@ if(isset($refresh_token) && $refresh_token !== ""){
 
 		echo json_encode(array(
 			"message" => "Successfull Create Token",
+			"id" => $data_query->iduser,
 			"access_token" => $jwt,
 			"refresh_token" => $refresh_token,
-			"email" => $email,
+			"email" => $data_query->email,
 			"expireAt" => $expire_claim
 		));
 	} else {
@@ -80,6 +77,6 @@ if(isset($refresh_token) && $refresh_token !== ""){
 		echo json_encode(array("message" => "Invalid Token"));
 	}
 } else {
-	http_response_code(401);
-	echo json_encode(array("message" => "Invalidd Token"));
+	http_response_code(400);
+	echo json_encode(array("message" => "Missing Token"));
 }
