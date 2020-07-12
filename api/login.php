@@ -66,6 +66,7 @@ if($data_query !== NULL){
 	],$table_name,'iduser',$data_query->iduser);
 
 	echo json_encode(array(
+		"result" => "OK",
 		"message" => "Successfull Login",
 		"access_token" => $jwt,
 		"refresh_token" => $refresh_token,
@@ -75,7 +76,7 @@ if($data_query !== NULL){
 
 } else {
 	http_response_code(401);
-	echo json_encode(array("message" => "Login Failed"));
+	echo json_encode(array("result" => "OK","message" => "Login Failed"));
 }
 
 ?>
