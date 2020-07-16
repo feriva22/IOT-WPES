@@ -40,7 +40,7 @@ if(isset($refresh_token) && $refresh_token !== ""){
 		//if refresh token not expired
 		$issuedate_claim = time();
 		$notbefore_claim = $issuedate_claim; //not before in seconds
-		$expire_claim = $issuedate_claim + 15; //expire time in seconds
+		$expire_claim = $issuedate_claim + 3600; //expire time in seconds
 		$token = array(
 			"iss" => $issuer_claim,
 			"aud" => $audience_claim,

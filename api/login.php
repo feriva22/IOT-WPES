@@ -44,7 +44,7 @@ if($data_query !== NULL){
 	$audience_claim = "HESOYAM";
 	$issuedate_claim = time();
 	$notbefore_claim = $issuedate_claim; //start usage of token
-	$expire_claim = $issuedate_claim + 10; //expire time in seconds
+	$expire_claim = $issuedate_claim + 3600; //expire time in seconds
 	$token = array(
 		"iss" => $issuer_claim,
 		"aud" => $audience_claim,
