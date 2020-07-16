@@ -18,7 +18,19 @@ if ($method === 'GET') {
 		json_response('ok','Success Get data',$data_query);
 	} 
 	else {
-		$data_query = $MysqlService->get($table_name,FALSE,$params);
+		$id_device = $_GET['id_device'];
+		$sensor_type = $_GET['sensor_type'];
+		$start_date = (isset($_GET['start_date']) && $_GET['start_date'] !== "null" ? $_GET['start_date'] : null);
+		$end_date = (isset($_GET['end_date']) && $_GET['end_date'] !== "null" ? $_GET['end_date'] : date('Y-m-d H:i:s'));
+		$limit = isset($_GET['limit']) ? $_GET['limit'] : null;
+
+		$sql = "SELECT * FROM `$table_name` where device_iddevice = $id_device ".
+					  "AND type_sensor = '$sensor_type'".
+					  (isset($start_date) ? "AND time > '$start_date'" : " ").
+					  "AND time < '$end_date' ORDER BY time desc ".
+					  (isset($limit) ? "LIMIT $limit" : "");
+		$data_query = $MysqlService->customSelectQuery($sql);
+
 		json_response('ok','Success Get data',$data_query);
 	}
 }

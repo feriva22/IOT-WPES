@@ -14,11 +14,17 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'GET') {
 	$params = $_GET;
 	if(count($params) == 0){
-		$data_query = $MysqlService->get($table_name,FALSE);
+		$data_query = $MysqlService->get($table_name,FALSE,[
+			'user_id' => $user_data->iduser
+		]);
 		json_response('ok','Success Get data',$data_query);
 	} 
 	else {
-		$data_query = $MysqlService->get($table_name,FALSE,$params);
+		$where_data = [
+			'user_id' => $user_data->iduser
+		];
+		$where_data = array_merge($where_data,$params);
+		$data_query = $MysqlService->get($table_name,FALSE,$where_data);
 		json_response('ok','Success Get data',$data_query);
 	}
 }

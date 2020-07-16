@@ -18,6 +18,7 @@ $data = json_decode(file_get_contents("php://input"));
 $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
 
 $arr = explode(" ", $authHeader);
+$user_data = null;
 
 $jwt = $arr[1];
 if($jwt){
@@ -32,6 +33,8 @@ if($jwt){
     		    "message" => "Invalid Token."
 			));
 			exit();
+		} else {
+			$user_data = $data_query;	
 		}
 	} catch(\Firebase\JWT\ExpiredException $e){
 		http_response_code(401);
