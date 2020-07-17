@@ -86,7 +86,7 @@ function insert($tableName,$insData) {
     $columns = implode(", ",array_keys($insData));
     $escaped_values = array_values($insData);
     $values  = implode(", ", $escaped_values);
-    $sql = "INSERT INTO $tableName ($columns) VALUES ($values)";
+	$sql = "INSERT INTO $tableName ($columns) VALUES ($values)";
     $this->connection->query($sql);
     return $this->connection->insert_id;
 }
